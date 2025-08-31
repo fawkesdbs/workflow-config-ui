@@ -13,15 +13,15 @@ import ReactFlow, {
   Controls,
   Background,
   MiniMap,
-  applyNodeChanges, // Import applyNodeChanges
-  applyEdgeChanges, // Import applyEdgeChanges
+  applyNodeChanges,
+  applyEdgeChanges,
   type Connection,
   type Node,
   type Edge,
   type ReactFlowInstance,
   type OnSelectionChangeParams,
-  type NodeChange, // Import NodeChange
-  type EdgeChange, // Import EdgeChange
+  type NodeChange,
+  type EdgeChange,
 } from "reactflow";
 import "reactflow/dist/style.css";
 
@@ -34,17 +34,52 @@ import { SourceNode, DrainNode, StationNode } from "./components/CustomNodes";
 import { useHistory } from "./hooks/useHistory";
 import { useClipboard } from "./hooks/useClipboard";
 
-let id = 1;
-const getId = () => `node_${id++}`;
 const toSnakeCase = (str: string) => {
   return str.replace(/[\s_]+/g, "_");
 };
 
+const LOCAL_STORAGE_KEY = "workflow-app-state";
+
+const loadState = () => {
+  try {
+    const serializedState = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (serializedState === null) {
+      return { nodes: [], edges: [], workers: [] };
+    }
+    const parsed = JSON.parse(serializedState);
+    return {
+      nodes: parsed.nodes || [],
+      edges: parsed.edges || [],
+      workers: parsed.workers || [],
+    };
+  } catch (error) {
+    console.error("Could not load state from local storage", error);
+    return { nodes: [], edges: [], workers: [] };
+  }
+};
+
 const App: React.FC = () => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  // Rename the default handlers
-  const [nodes, setNodes, onNodesChangeHandler] = useNodesState([]);
-  const [edges, setEdges, onEdgesChangeHandler] = useEdgesState([]);
+  const [savedState] = useState(loadState);
+
+  // Initialize the ID counter based on the highest existing node ID
+  const latestId = useRef(
+    savedState.nodes.reduce((maxId: number, node: Node) => {
+      const nodeIdNum = parseInt(node.id.split("_")[1], 10);
+      return nodeIdNum > maxId ? nodeIdNum : maxId;
+    }, 0)
+  );
+
+  const getId = () => `node_${++latestId.current}`;
+
+  const [nodes, setNodes, onNodesChangeHandler] = useNodesState(
+    savedState.nodes
+  );
+  const [edges, setEdges, onEdgesChangeHandler] = useEdgesState(
+    savedState.edges
+  );
+  const [workers, setWorkers] = useState<Worker[]>(savedState.workers);
+
   const [reactFlowInstance, setReactFlowInstance] =
     useState<ReactFlowInstance | null>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -54,25 +89,27 @@ const App: React.FC = () => {
     edges: Edge[];
   } | null>(null);
   const [workersPanelOpen, setWorkersPanelOpen] = useState(false);
-  const [workers, setWorkers] = useState<Worker[]>([]);
 
   const { addHistory, undo, redo, canUndo, canRedo } = useHistory(
+    { nodes: savedState.nodes, edges: savedState.edges },
     setNodes,
     setEdges
   );
   const { copy, cut, paste, duplicate } = useClipboard();
 
-  // Create wrapper for onNodesChange to update history
+  useEffect(() => {
+    const stateToSave = { nodes, edges, workers };
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(stateToSave));
+  }, [nodes, edges, workers]);
+
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
       const nextNodes = applyNodeChanges(changes, nodes);
-      // Only add to history if the change is not just a drag event
       const isSignificantChange = changes.some(
         (change) =>
           change.type !== "position" ||
           (change.type === "position" && !change.dragging)
       );
-
       if (isSignificantChange) {
         addHistory(nextNodes, edges);
       }
@@ -81,7 +118,6 @@ const App: React.FC = () => {
     [nodes, edges, addHistory, onNodesChangeHandler]
   );
 
-  // Create wrapper for onEdgesChange to update history
   const onEdgesChange = useCallback(
     (changes: EdgeChange[]) => {
       const nextEdges = applyEdgeChanges(changes, edges);
@@ -126,7 +162,7 @@ const App: React.FC = () => {
         id: getId(),
         type,
         position,
-        data: { label: `${type}_${id - 1}` },
+        data: { label: `${type}_${latestId.current}` },
       };
       setNodes((nds) => {
         const newNodes = nds.concat(newNode);
@@ -158,7 +194,7 @@ const App: React.FC = () => {
     []
   );
 
-  const handleDelete = () => {
+  const handleDelete = useCallback(() => {
     if (selectedElements) {
       const nodeIds = selectedElements.nodes.map((n) => n.id);
       const edgeIds = selectedElements.edges.map((e) => e.id);
@@ -172,10 +208,14 @@ const App: React.FC = () => {
         return newNodes;
       });
     }
-  };
+  }, [selectedElements, setNodes, setEdges, addHistory]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Delete") {
+        handleDelete();
+      }
+
       if (e.ctrlKey || e.metaKey) {
         switch (e.key) {
           case "z":
@@ -220,6 +260,7 @@ const App: React.FC = () => {
     duplicate,
     setNodes,
     setEdges,
+    handleDelete,
   ]);
 
   return (

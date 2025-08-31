@@ -7,13 +7,11 @@ type HistoryState = {
 };
 
 export const useHistory = (
+  initialState: HistoryState,
   setNodes: (nodes: Node[]) => void,
   setEdges: (edges: Edge[]) => void
 ) => {
-  // History starts with one entry: the initial empty state.
-  const [history, setHistory] = useState<HistoryState[]>([
-    { nodes: [], edges: [] },
-  ]);
+  const [history, setHistory] = useState<HistoryState[]>([initialState]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const addHistory = useCallback(

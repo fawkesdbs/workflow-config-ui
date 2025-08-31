@@ -11,11 +11,8 @@ import type {
 } from "../types/models";
 
 const toSnakeCase = (str: string) => {
-  return str
-    .replace(/[\s_]+/g, "_")
-    .replace(/([A-Z])/g, "_$1")
-    .replace(/^_/, "")
-    .toUpperCase();
+  // Replace spaces or multiple underscores with a single underscore
+  return str.replace(/[\s_]+/g, "_");
 };
 
 export const exportToExcel = (
@@ -35,12 +32,12 @@ export const exportToExcel = (
     const data = node.data;
     const name = toSnakeCase(data.label);
 
-    // Add all node types to the Stations sheet
     Stations.push({
       Name: name,
-      ClassType: nodeType,
-      X_Pos: Math.round(node.position.x),
-      Y_Pos: Math.round(node.position.y),
+      // Use the ClassType from the node's data, with the node's type as a fallback
+      ClassType: data.ClassType || `.UserObjects.${nodeType}`,
+      X_Pos: Math.round(node.position.x / 25),
+      Y_Pos: Math.round(node.position.y / 10),
       ProcTime: data.ProcTime || "00:00:00",
       WorkerPool: data.WorkerPool || "N/A",
     });
@@ -61,7 +58,7 @@ export const exportToExcel = (
       Mat_Inflow.push({
         SourceName: predecessorName,
         Successor: successorName,
-        MU_Type: sourceNode.data.MU_Type || "PartA",
+        MU_Type: sourceNode.data.MU_Type || ".UserObjects.Part",
         Amount: sourceNode.data.Amount || 1,
       });
     } else if (targetType === "Drain") {

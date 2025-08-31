@@ -36,14 +36,14 @@ const WorkersPanel: React.FC<WorkersPanelProps> = ({
     setWorkers([
       ...workers,
       {
-        Worker: "New Team",
+        Worker: ".Resources.Worker",
         Amount: 1,
-        Shift: "Day",
-        Speed: 100,
-        Efficiency: 95,
-        Home_Language: "English",
-        Scope: "General",
-        Additional_Services: "None",
+        Shift: "0",
+        Speed: 0,
+        Efficiency: 0,
+        Home_Language: "",
+        Scope: "",
+        Additional_Services: "GeneralPool",
       },
     ]);
   };

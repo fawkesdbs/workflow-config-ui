@@ -79,7 +79,7 @@ const NodePopover: React.FC<NodePopoverProps> = ({
                 type="text"
                 name="ClassType"
                 id="ClassType"
-                value={formData?.ClassType || "DefaultClass"}
+                value={formData?.ClassType || ".UserObjects.WorkStation"}
                 onChange={handleChange}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               />
@@ -95,7 +95,7 @@ const NodePopover: React.FC<NodePopoverProps> = ({
                 type="text"
                 name="ProcTime"
                 id="ProcTime"
-                value={formData?.ProcTime || "00:01:00"}
+                value={formData?.ProcTime || "00:00:00"}
                 onChange={handleChange}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               />
@@ -133,7 +133,7 @@ const NodePopover: React.FC<NodePopoverProps> = ({
                 type="text"
                 name="MU_Type"
                 id="MU_Type"
-                value={formData?.MU_Type || "PartA"}
+                value={formData?.MU_Type || ".UserObjects.Part"}
                 onChange={handleChange}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               />

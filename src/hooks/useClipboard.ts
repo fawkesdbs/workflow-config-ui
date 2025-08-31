@@ -11,7 +11,12 @@ export const useClipboard = () => {
   } | null>(null);
 
   const copy = useCallback((nodes: Node[], edges: Edge[]) => {
-    setClipboard({ nodes, edges });
+    // Deep copy the nodes to ensure data is preserved
+    const copiedNodes = nodes.map((node) => ({
+      ...node,
+      data: { ...node.data },
+    }));
+    setClipboard({ nodes: copiedNodes, edges });
   }, []);
 
   const cut = useCallback(
@@ -44,6 +49,7 @@ export const useClipboard = () => {
         return {
           ...node,
           id: newNodeId,
+          data: { ...node.data }, // Ensure data is a new object
           position: {
             x: node.position.x + 20,
             y: node.position.y + 20,
@@ -78,15 +84,15 @@ export const useClipboard = () => {
       const newNodes = nodesToDuplicate.map((node) => ({
         ...node,
         id: getId(),
+        data: { ...node.data }, // Ensure data is a new object
         position: {
           x: node.position.x + 20,
           y: node.position.y + 20,
         },
-        selected: true, // Mark new nodes as selected
+        selected: true,
       }));
 
       setNodes((nds) =>
-        // Deselect original nodes and add the new, selected nodes
         nds.map((n) => ({ ...n, selected: false })).concat(newNodes)
       );
     },
